@@ -3,28 +3,45 @@ document.removeEventListener('mouseover', handleHover);
 document.removeEventListener('mouseout', handleMouseLeave);
 
 function hasTemplateBinding(element) {
+  // Check for Builder.io specific attributes
+  if (
+    element.getAttribute('builder-id') ||
+    element.getAttribute('builder-type') ||
+    element.classList.contains('builder-block')
+  ) {
+    console.log('Found Builder element:', element);
+    return true;
+  }
+
   // Look for inline script tags that might contain settings
   const scripts = element.getElementsByTagName('script');
   for (const script of scripts) {
     if (script.textContent?.includes('state.getSettingValue')) {
+      console.log('Found template binding in script:', script.textContent);
       return true;
     }
   }
 
   // Check element's own content and attributes
-  return (
+  const hasBinding =
     element.textContent?.includes('state.getSettingValue') ||
-    element.outerHTML?.includes('state.getSettingValue')
-  );
+    element.outerHTML?.includes('state.getSettingValue');
+
+  if (hasBinding) {
+    console.log('Found template binding in element:', element.outerHTML);
+  }
+
+  return hasBinding;
 }
 
 function handleHover(event) {
+  console.log('Hovering over element:', event.target);
   const element = event.target;
 
   // Check if element or its parents have template binding
   let targetElement = element;
   let depth = 0;
-  const maxDepth = 10; // Prevent infinite loops
+  const maxDepth = 10;
 
   while (
     targetElement &&
@@ -33,18 +50,23 @@ function handleHover(event) {
   ) {
     targetElement = targetElement.parentElement;
     depth++;
+    console.log('Checking parent at depth:', depth, targetElement);
   }
 
   if (targetElement && depth < maxDepth) {
-    // Store original background color
-    targetElement._originalBackground = targetElement.style.backgroundColor;
-    // Set background to red with some transparency
-    targetElement.style.backgroundColor = 'rgba(255, 0, 0, 0.3)';
-    console.log('Found element with template setting:', targetElement);
+    console.log('FOUND TARGET - Applying red background to:', targetElement);
+    // Force the background change with !important
+    targetElement.setAttribute(
+      'style',
+      'background-color: rgba(255, 0, 0, 0.3) !important'
+    );
+    // Store for restoration
+    targetElement._originalBackground = targetElement.getAttribute('style');
   }
 }
 
 function handleMouseLeave(event) {
+  console.log('Mouse leaving element:', event.target);
   const element = event.target;
 
   let targetElement = element;
@@ -61,9 +83,9 @@ function handleMouseLeave(event) {
   }
 
   if (targetElement && depth < maxDepth) {
-    // Restore original background color
-    targetElement.style.backgroundColor =
-      targetElement._originalBackground || '';
+    console.log('Restoring original background for:', targetElement);
+    // Remove the forced style
+    targetElement.removeAttribute('style');
   }
 }
 
