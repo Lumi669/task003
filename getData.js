@@ -15,12 +15,19 @@ fetch(url)
     console.log('builderData === ', builderData);
     console.log('Settings:', builderData.settings);
     console.log('Blocks:', builderData.blocks);
+
     const blocks = builderData.blocks;
     const meta = blocks[1].children[0].meta;
     console.log('meta === ', meta);
+
+    // Retrieve the id as specified
+    const componentId = blocks[1].children[0].id;
+    console.log('componentId === ', componentId); // Output: "builder-e75a638a9c7844e4b588bf3749daf6fb"
+
+    // Assuming you want to access more deeply nested options.code values
     const firstItemOfCode = meta.bindingActions.component.options.code[0];
     console.log('firstItemOfCode === ', firstItemOfCode);
     const finalCode = firstItemOfCode.options.code;
-    console.log('finalCode === ', finalCode); // finalCode ===  `<style>${state.getSettingValue('css')}</style>`
+    console.log('finalCode === ', finalCode); // finalCode === `<style>${state.getSettingValue('css')}</style>`
   })
   .catch((error) => console.error('Error fetching builder data:', error));
