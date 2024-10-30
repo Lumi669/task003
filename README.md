@@ -14,7 +14,7 @@
 
 3. Open the browser console
 
-4. Paste the code from hover-effect.js into the console
+4. Paste the code from hover-effect.js into the console and press Enter
 
 5. Hover over the element that has binding related to a template’s setting
 
