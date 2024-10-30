@@ -1,69 +1,86 @@
-// First, find the button element
-const targetBuilderId = 'builder-5631b68cd5e5484ab94fb29f29a4ecfd';
-const element = document.querySelector(`[builder-id="${targetBuilderId}"]`);
+const url =
+  'https://cdn.builder.io/api/v3/query/3628f640692a4d2fa236d814bb277285/8c22b490d74c4be8840ebf9c8add7012?omit=meta.componentsUsed&apiKey=3628f640692a4d2fa236d814bb277285&userAttributes.urlPath=%2Fapi%2Finternal-preview-cart&userAttributes.host=upez-frontend.vercel.app&userAttributes.device=desktop&options.8c22b490d74c4be8840ebf9c8add7012.prerender=false&options.8c22b490d74c4be8840ebf9c8add7012.model=%22page%22&options.8c22b490d74c4be8840ebf9c8add7012.entry=%228c22b490d74c4be8840ebf9c8add7012%22';
 
-// Get UPEZ_BUILDER_DATA
-const builderData = window.UPEZ_BUILDER_DATA;
+const dynamicID = '8c22b490d74c4be8840ebf9c8add7012';
 
-if (element && builderData) {
-  const cartDataArray = builderData['8c22b490d74c4be8840ebf9c8add7012'];
-
-  if (cartDataArray && cartDataArray.length > 0) {
-    const cartData = cartDataArray[0];
-
-    // 1. Create or update CSS setting
-    if (!cartData.data) cartData.data = {};
-    if (!cartData.data.settings) cartData.data.settings = [];
-
-    const cssSettings = {
-      id: 'css',
-      type: 'css',
-      label: 'Custom css',
-      default: `
-                [builder-id="${targetBuilderId}"]:hover {
-                    outline: 2px solid red !important;
-                    outline-offset: 1px !important;
-                    cursor: pointer;
-                    transition: all 0.3s ease;
-                }
-            `,
-      info: 'Css code to be inserted between <style>...</style>',
+// Fetch the data from the new URL
+fetch(url)
+  .then((response) => {
+    console.log('Fetch request status:', response.status); // Check fetch status
+    if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+    return response.json();
+  })
+  .then((fullBuilderData) => {
+    // Extract settings and blocks from the retrieved data
+    const builderData = {
+      settings: fullBuilderData[dynamicID]?.[0]?.data?.settings || [],
+      blocks: fullBuilderData[dynamicID]?.[0]?.data?.blocks || [],
     };
 
-    // Update or add CSS settings
-    const existingIndex = cartData.data.settings.findIndex(
-      (s) => s.id === 'css'
-    );
-    if (existingIndex >= 0) {
-      cartData.data.settings[existingIndex] = cssSettings;
-    } else {
-      cartData.data.settings.push(cssSettings);
+    console.log('Fetched builderData:', builderData);
+    console.log('Settings:', builderData.settings);
+    console.log('Blocks:', builderData.blocks);
+
+    const settings = builderData.settings;
+    const blocks = builderData.blocks;
+
+    // Helper function to find elements with bindings to template settings
+    function findElementsWithBindings(blocks, settings) {
+      const elementsWithBindings = [];
+
+      function traverseBlocks(block) {
+        if (block.bindings) {
+          for (let binding in block.bindings) {
+            if (block.bindings[binding].includes('settings.')) {
+              const settingKey =
+                block.bindings[binding].match(/settings\.(\w+)/)[1];
+              const setting = settings.find((s) => s.name === settingKey);
+              elementsWithBindings.push({ block, setting });
+            }
+          }
+        }
+        if (block.children) {
+          block.children.forEach(traverseBlocks);
+        }
+      }
+
+      blocks.forEach(traverseBlocks);
+      return elementsWithBindings;
     }
 
-    // 2. Create Custom CSS block
-    const customCssBlock = {
-      '@type': '@builder.io/sdk:Element',
-      '@version': 2,
-      component: {
-        name: 'Custom Code',
-        options: {
-          code: `<style>\${state.getSettingValue('css')}</style>`,
-        },
-      },
-      id: 'builder-hover-css',
-      layerName: 'Custom CSS',
-    };
+    const elementsWithBindings = findElementsWithBindings(blocks, settings);
 
-    // Add block
-    if (!cartData.data.blocks) cartData.data.blocks = [];
-    cartData.data.blocks.push(customCssBlock);
+    // Debug: Print out builder ids and associated settings
+    elementsWithBindings.forEach(({ block, setting }) => {
+      console.log(
+        'Found block with builder id:',
+        block.id,
+        'and setting:',
+        setting
+      );
+    });
 
-    // 3. For immediate effect, also apply directly
-    const styleElement = document.createElement('style');
-    styleElement.textContent = cssSettings.default;
-    document.head.appendChild(styleElement);
-
-    console.log('Updated CSS settings:', cssSettings);
-    console.log('Updated cart data:', cartData);
-  }
-}
+    // Apply hover effect to elements with bindings to template settings
+    elementsWithBindings.forEach(({ block, setting }) => {
+      const element = document.querySelector(`[builder-id="${block.id}"]`);
+      if (element) {
+        console.log(
+          'Applying hover effect to element with builder id:',
+          block.id
+        );
+        element.addEventListener('mouseenter', () => {
+          element.style.outline = '2px solid red';
+          console.log('Template setting on hover:', setting);
+        });
+        element.addEventListener('mouseleave', () => {
+          element.style.outline = 'none';
+        });
+      } else {
+        console.warn(
+          'No matching element found in DOM for builder id:',
+          block.id
+        );
+      }
+    });
+  })
+  .catch((error) => console.error('Error fetching or processing data:', error));
