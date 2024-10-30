@@ -1,118 +1,117 @@
-// const url =
-//   'https://cdn.builder.io/api/v3/query/3628f640692a4d2fa236d814bb277285/8c22b490d74c4be8840ebf9c8add7012?omit=meta.componentsUsed&apiKey=3628f640692a4d2fa236d814bb277285&userAttributes.urlPath=%2Fapi%2Finternal-preview-cart&userAttributes.host=upez-frontend.vercel.app&userAttributes.device=desktop&options.8c22b490d74c4be8840ebf9c8add7012.prerender=false&options.8c22b490d74c4be8840ebf9c8add7012.model=%22page%22&options.8c22b490d74c4be8840ebf9c8add7012.entry=%228c22b490d74c4be8840ebf9c8add7012%22';
+(() => {
+  // Add hover effect styles
+  const styleElement = document.createElement('style');
+  styleElement.textContent = `
+        .has-setting-binding:hover {
+            outline: 2px solid red !important;
+            outline-offset: 1px !important;
+            cursor: pointer !important;
+        }
+    `;
+  document.head.appendChild(styleElement);
 
-// const dynamicID = '8c22b490d74c4be8840ebf9c8add7012';
+  // Get Builder data from window
+  const builderData = window.UPEZ_BUILDER_DATA;
+  if (!builderData) {
+    console.error('Builder data not found');
+    return;
+  }
 
-// fetch(url)
-//   .then((response) => {
-//     console.log('Fetch request status:', response.status); // Check fetch status
-//     if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
-//     return response.json();
-//   })
-//   .then((fullBuilderData) => {
-//     const builderData = {
-//       settings: fullBuilderData[dynamicID]?.[0]?.data?.settings || [],
-//       blocks: fullBuilderData[dynamicID]?.[0]?.data?.blocks || [],
-//     };
+  // Get template data
+  const templateData = Object.values(builderData)[0]?.[0];
+  const settings = templateData?.data?.settings || [];
+  const blocks = templateData?.data?.blocks || [];
 
-//     // Collect all builder-ids
-//     const builderIds = [];
+  // Function to extract setting name from binding string
+  const extractSettingName = (binding) => {
+    // Common patterns seen in the bindings
+    const patterns = [
+      /state\.getSettingValue\(['"](.*?)['"]\)/,
+      /state\.settings\.(\w+)/,
+      /state\.settings\?\.(\w+)/,
+      /settings\.get\(['"](.*?)['"]\)/,
+      /settings\.(\w+)/,
+    ];
 
-//     function collectBuilderIds(blocks) {
-//       blocks.forEach((block) => {
-//         if (block.id) {
-//           builderIds.push(block.id);
-//         }
-//         if (block.children) {
-//           collectBuilderIds(block.children);
-//         }
-//       });
-//     }
+    for (const pattern of patterns) {
+      const match = binding.match(pattern);
+      if (match) {
+        return match[1];
+      }
+    }
+    return null;
+  };
 
-//     collectBuilderIds(builderData.blocks);
+  // Function to process blocks
+  const processBlocks = (blocks) => {
+    blocks.forEach((block) => {
+      if (block.bindings) {
+        Object.entries(block.bindings).forEach(([key, binding]) => {
+          if (typeof binding === 'string') {
+            // Look for state.settings or state.getSettingValue patterns
+            if (
+              binding.includes('state.settings') ||
+              binding.includes('state.getSettingValue') ||
+              binding.includes('settings.get')
+            ) {
+              const settingName = extractSettingName(binding);
+              if (settingName) {
+                // Try different selectors to find the element
+                const selectors = [
+                  `[builder-id="${block.id}"]`,
+                  `[data-builder-id="${block.id}"]`,
+                  `#${block.id}`,
+                ];
 
-//     // Apply hover effect to each element with the collected builder-id
-//     builderIds.forEach((builderId) => {
-//       const element = document.querySelector(`[builder-id="${builderId}"]`);
-//       if (element) {
-//         console.log(
-//           `Applying hover effect to element with builder-id: ${builderId}`
-//         );
-//         element.addEventListener('mouseenter', () => {
-//           element.style.outline = '2px solid red';
-//         });
-//         element.addEventListener('mouseleave', () => {
-//           element.style.outline = 'none';
-//         });
-//       } else {
-//         console.warn(
-//           `No matching element found in DOM for builder-id: ${builderId}`
-//         );
-//       }
-//     });
-//   })
-//   .catch((error) => console.error('Error fetching or processing data:', error));
-const url =
-  'https://cdn.builder.io/api/v3/query/3628f640692a4d2fa236d814bb277285/8c22b490d74c4be8840ebf9c8add7012?omit=meta.componentsUsed&apiKey=3628f640692a4d2fa236d814bb277285&userAttributes.urlPath=%2Fapi%2Finternal-preview-cart&userAttributes.host=upez-frontend.vercel.app&userAttributes.device=desktop&options.8c22b490d74c4be8840ebf9c8add7012.prerender=false&options.8c22b490d74c4be8840ebf9c8add7012.model=%22page%22&options.8c22b490d74c4be8840ebf9c8add7012.entry=%228c22b490d74c4be8840ebf9c8add7012%22';
+                let element;
+                for (const selector of selectors) {
+                  element = document.querySelector(selector);
+                  if (element) break;
+                }
 
-const dynamicID = '8c22b490d74c4be8840ebf9c8add7012';
+                if (element) {
+                  // Find matching setting
+                  const setting = settings.find(
+                    (s) => s.name === settingName || s.id === settingName
+                  );
 
-// Fetch the data from the new URL
-fetch(url)
-  .then((response) => {
-    console.log('Fetch request status:', response.status);
-    if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
-    return response.json();
-  })
-  .then((fullBuilderData) => {
-    const builderData = {
-      settings: fullBuilderData[dynamicID]?.[0]?.data?.settings || [],
-      blocks: fullBuilderData[dynamicID]?.[0]?.data?.blocks || [],
-    };
-
-    // Filter blocks with bindings related to settings
-    const targetBuilderIds = [];
-
-    function findBlocksWithSettingBindings(blocks) {
-      blocks.forEach((block) => {
-        if (block.bindings) {
-          for (let binding in block.bindings) {
-            if (block.bindings[binding].includes('state.getSettingValue')) {
-              targetBuilderIds.push(block.id);
-              console.log(
-                `Found target builder-id with setting binding: ${block.id}`
-              );
-              break;
+                  if (setting) {
+                    element.classList.add('has-setting-binding');
+                    element.addEventListener('mouseenter', () => {
+                      console.log('Template Setting:', setting);
+                    });
+                  }
+                }
+              }
             }
           }
-        }
-        // Recursively check nested children
-        if (block.children) {
-          findBlocksWithSettingBindings(block.children);
-        }
-      });
-    }
-
-    findBlocksWithSettingBindings(builderData.blocks);
-
-    // Apply hover effect to elements with builder-ids that have setting bindings
-    targetBuilderIds.forEach((builderId) => {
-      const element = document.querySelector(`[builder-id="${builderId}"]`);
-      if (element) {
-        console.log(
-          `Applying hover effect to element with builder-id: ${builderId}`
-        );
-        element.addEventListener('mouseenter', () => {
-          element.style.outline = '2px solid red';
         });
-        element.addEventListener('mouseleave', () => {
-          element.style.outline = 'none';
-        });
-      } else {
-        console.warn(
-          `No matching element found in DOM for builder-id: ${builderId}`
-        );
+      }
+
+      // Process nested blocks/children
+      if (block.blocks || block.children) {
+        const childBlocks = block.blocks || block.children;
+        if (Array.isArray(childBlocks)) {
+          processBlocks(childBlocks);
+        }
       }
     });
-  })
-  .catch((error) => console.error('Error fetching or processing data:', error));
+  };
+
+  // Start processing blocks
+  processBlocks(blocks);
+
+  // Add mutation observer to handle dynamically added elements
+  const observer = new MutationObserver((mutations) => {
+    mutations.forEach((mutation) => {
+      if (mutation.addedNodes.length) {
+        processBlocks(blocks);
+      }
+    });
+  });
+
+  observer.observe(document.body, {
+    childList: true,
+    subtree: true,
+  });
+})();
