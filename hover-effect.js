@@ -68,8 +68,8 @@
 
                     // Add event listeners for hover effect
                     element.addEventListener('mouseenter', () => {
-                      element.style.outline = '2px solid red';
-                      element.style.outlineOffset = '1px';
+                      element.style.outline = '4px solid red'; // Thicker outline
+                      element.style.outlineOffset = '4px'; // More space between element and outline
                       element.style.cursor = 'pointer';
                       console.log('Template Setting:', setting);
                     });
