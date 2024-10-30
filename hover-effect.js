@@ -1,15 +1,4 @@
 (() => {
-  // Add hover effect styles
-  const styleElement = document.createElement('style');
-  styleElement.textContent = `
-        .has-setting-binding:hover {
-            outline: 2px solid red !important;
-            outline-offset: 1px !important;
-            cursor: pointer !important;
-        }
-    `;
-  document.head.appendChild(styleElement);
-
   // Get Builder data from window
   const builderData = window.UPEZ_BUILDER_DATA;
   if (!builderData) {
@@ -24,7 +13,6 @@
 
   // Function to extract setting name from binding string
   const extractSettingName = (binding) => {
-    // Common patterns seen in the bindings
     const patterns = [
       /state\.getSettingValue\(['"](.*?)['"]\)/,
       /state\.settings\.(\w+)/,
@@ -48,7 +36,7 @@
       if (block.bindings) {
         Object.entries(block.bindings).forEach(([key, binding]) => {
           if (typeof binding === 'string') {
-            // Look for state.settings or state.getSettingValue patterns
+            // Look for relevant binding patterns
             if (
               binding.includes('state.settings') ||
               binding.includes('state.getSettingValue') ||
@@ -77,8 +65,19 @@
 
                   if (setting) {
                     element.classList.add('has-setting-binding');
+
+                    // Add event listeners for hover effect
                     element.addEventListener('mouseenter', () => {
+                      element.style.outline = '2px solid red';
+                      element.style.outlineOffset = '1px';
+                      element.style.cursor = 'pointer';
                       console.log('Template Setting:', setting);
+                    });
+
+                    element.addEventListener('mouseleave', () => {
+                      element.style.outline = '';
+                      element.style.outlineOffset = '';
+                      element.style.cursor = '';
                     });
                   }
                 }
