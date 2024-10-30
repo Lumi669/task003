@@ -1,4 +1,16 @@
 (() => {
+  // Add hover effect styles
+  const styleElement = document.createElement('style');
+  styleElement.textContent = `
+        .has-setting-binding:hover {
+            outline: 4px solid red;
+            outline-offset: 4px;
+            cursor: pointer;
+            border-radius: 0 !important; /* Force square corners */
+        }
+    `;
+  document.head.appendChild(styleElement);
+
   // Get Builder data from window
   const builderData = window.UPEZ_BUILDER_DATA;
   if (!builderData) {
@@ -71,6 +83,7 @@
                       element.style.outline = '4px solid red'; // Thicker outline
                       element.style.outlineOffset = '4px'; // More space between element and outline
                       element.style.cursor = 'pointer';
+                      element.style.borderRadius = '0'; // Ensure square corners on hover
                       console.log('Template Setting:', setting);
                     });
 
@@ -78,6 +91,7 @@
                       element.style.outline = '';
                       element.style.outlineOffset = '';
                       element.style.cursor = '';
+                      element.style.borderRadius = ''; // Reset any border radius changes
                     });
                   }
                 }
